@@ -118,7 +118,7 @@ def updatek(k,road_id,x_average_k, segma_k):
     # diff = (new_segma_k - segma_k)/(new_x_k - x_k)
     # print(diff)   
     # print(math.sqrt(abs(new_segma_k)), new_x_avg_k)              
-    if math.sqrt(abs(new_segma_k))/new_x_avg_k > 1.5:
+    if math.sqrt(abs(new_segma_k))/new_x_avg_k > 1:
         return -1, k+1, new_x_avg_k, new_segma_k
     return 1, k+1, new_x_avg_k, new_segma_k
 
@@ -134,7 +134,7 @@ for idx, road_id in enumerate(road_id_sorted):
         heapq.heapify(q)
         road.color = color
         
-        k = 2
+        k = 1
         avg = road.density
         seg = 0
 
@@ -145,11 +145,15 @@ for idx, road_id in enumerate(road_id_sorted):
             current_road = heapq.heappop(q)[2]
 
             res, k_temp, avg_temp, seg_temp = updatek(k, current_road.idx, avg, seg)
+            
             if res!=-1 or counter<10:
-                if (COUNTER<10 and counter<10):
-                        print(OKGREEN,"current candidate: ", nb_road.idx, " is added becuase < 10 road in cluster", ENDC)
-                    elif (COUNTER<10):
-                        print(OKGREEN,"current candidate: ", nb_road.idx, "density: {:.2f}".format(nb_road.density), "coeff:", coeff, "is added becuase coeff within the range",ENDC)
+                coeff = math.sqrt(abs(seg_temp))/avg_temp
+                if (COUNTER<30 and counter<10):
+                    print(OKGREEN,"road: ", current_road.idx, "density: {:.2f}".format(current_road.density), " is colored becuase < 10 road in cluster", "coeff: {:.2f}".format(coeff),ENDC)
+                    #COUNTER+=1
+                elif (COUNTER<30):
+                    print(OKGREEN,"road: ", current_road.idx, "density: {:.2f}".format(current_road.density), "coeff: {:.2f}".format(coeff), "is colored becuase coeff within the range",ENDC)
+                    COUNTER+=1
                 current_road.color=color
                 counter+=1
                 k, avg, seg= k_temp, avg_temp, seg_temp
@@ -179,6 +183,8 @@ for idx, road_id in enumerate(road_id_sorted):
                             
                         #     coeff = math.sqrt(abs(seg))/avg
                         #     nb_road.color = color
+                        if COUNTER<30:
+                            print(OKBLUE,"candidate: ", nb_road.idx, "density: {:.2f}".format(nb_road.density),"is added to consider queue", ENDC)
                         heapq.heappush(q, (-nb_road.density,nb_road.idx, nb_road))
                         #    counter+=1
 
