@@ -20,15 +20,42 @@ class Road:
         self.lat = lat
         self.nb = set()
         self.length = 0
-        self.density = 0
+        self.density = 0.0001
         self.color = -1
     def __str__(self):
         return "{0:.2f}".format(self.density)
-    
+
+class Intersection:
+    def __init__(self, idx, lon, lat):
+        self.idx = idx
+        self.lon = lon
+        self.lat = lat
+        self.incoming = {}
+        self.outgoing = {}
 
 
 
 roadMap = {}
+itxMap = {}
+with open("intersection_list.csv") as full_road_info:
+    csv_reader = csv.DictReader(full_road_info)
+    for row in csv_reader:
+        idx = int(row['origin'])
+        lon = float(row['lon'])
+        lat = float(row['lat'])
+        intersection = Intersection(idx,lon, lat)
+        itxMap[idx] = intersection
+# with open("intersection_list.csv") as full_road_info:
+#     csv_reader = csv.DictReader(full_road_info)
+#     for row in csv_reader:
+        # outgoing_str = row['outgoing'].split(' ')
+        # incoming_str = row['incoming'].split(' ')
+        # outgoing_intersection_edge = {}
+        # for i in outgoing_str:
+        #     outgoing_list = i.split('-')
+        #     node, edge = int(outgoing_list[0]), int(outgoing_list[1])
+        #     origin[]
+        # incoming_intersection_edge = {}
 with open("training_morning_road_pickup_lon_lat.csv") as road_info:
     csv_reader = csv.DictReader(road_info)
     for row in csv_reader:
@@ -56,7 +83,7 @@ with open("edgeList.txt", mode='r') as edge_info:
                 roadMap[roadId] = new_road
             r_obj = roadMap[roadId]
             r_obj.length = roadLength
-            r_obj.density = r_obj.pickup/roadLength
+            r_obj.density = max(r_obj.density, r_obj.pickup/roadLength)
             out.write(str(roadId)+","+str(r_obj.density)+"\n")
         
 
@@ -65,8 +92,10 @@ g = nx.DiGraph()
 
 with open("Road_adj_map.csv") as road_adj:
     csv_reader = csv.DictReader(road_adj)
+    own_id_set = set()
     for row in csv_reader:
         own_id = int(row['roadId'])
+        own_id_set.add(own_id)
         to_ids = [int(i) for i in row['downstream'].split(' ') if i != own_id and i!='']
         from_ids = [int(i) for i in row['upstream'].split(' ') if i != own_id and i!='']
 
@@ -81,8 +110,16 @@ with open("Road_adj_map.csv") as road_adj:
             
         for i in set(to_ids):
             g.add_edge(own_id, i)
+    diff_set = set()
+    for i in roadMap:
+        if i not in own_id_set:
+            diff_set.add(i)
+    for i in diff_set:
+        roadMap.pop(i, None)
+
 l = [len(Gc) for Gc in sorted(nx.strongly_connected_component_subgraphs(g),key=len, reverse=True)]
-print(len(l))
+print(l)
+print(len(roadMap))
 road_id_sorted = [r.idx for r in sorted(roadMap.values(), key = lambda x:-x.density)]
 road_density = [r.density for r in sorted(roadMap.values(), key = lambda x:-x.density)]
 
@@ -118,21 +155,23 @@ def updatek(k,road_id,x_average_k, segma_k):
     # diff = (new_segma_k - segma_k)/(new_x_k - x_k)
     # print(diff)   
     # print(math.sqrt(abs(new_segma_k)), new_x_avg_k)              
-    if math.sqrt(abs(new_segma_k))/new_x_avg_k > 1:
+    if abs(math.sqrt(abs(new_segma_k)) - math.sqrt(abs(segma_k)))> 1:
         return -1, k+1, new_x_avg_k, new_segma_k
     return 1, k+1, new_x_avg_k, new_segma_k
 
 color = 0
-COUNTER=0
+d = {}
+
+
 import heapq
 for idx, road_id in enumerate(road_id_sorted):
     road = roadMap[road_id]
     
-    if road.color==-1 and road.density!=0:
+    if road.color==-1:
 
         q = [(-road.density, road.idx, road)]
         heapq.heapify(q)
-        road.color = color
+        #road.color = color
         
         k = 1
         avg = road.density
@@ -140,6 +179,10 @@ for idx, road_id in enumerate(road_id_sorted):
 
         #origin_density_level = process(road.density)
         counter = 0
+        current_cluster_rds = []
+        current_cluster_nbs = set()
+        visited = set()
+        visited.add(road)
         while(q):
             
             current_road = heapq.heappop(q)[2]
@@ -147,18 +190,10 @@ for idx, road_id in enumerate(road_id_sorted):
             res, k_temp, avg_temp, seg_temp = updatek(k, current_road.idx, avg, seg)
             
             if res!=-1 or counter<10:
-                coeff = math.sqrt(abs(seg_temp))/avg_temp
-                if (COUNTER<30 and counter<10):
-                    print(OKGREEN,"road: ", current_road.idx, "density: {:.2f}".format(current_road.density), " is colored becuase < 10 road in cluster", "coeff: {:.2f}".format(coeff),ENDC)
-                    #COUNTER+=1
-                elif (COUNTER<30):
-                    print(OKGREEN,"road: ", current_road.idx, "density: {:.2f}".format(current_road.density), "coeff: {:.2f}".format(coeff), "is colored becuase coeff within the range",ENDC)
-                    COUNTER+=1
-                current_road.color=color
+                    
+                current_cluster_rds.append(current_road)
                 counter+=1
                 k, avg, seg= k_temp, avg_temp, seg_temp
-
-            
                 
                 nbs = [roadMap[n] for n in current_road.nb]
                 nbs = sorted(nbs, key=lambda x: -x.density)
@@ -167,37 +202,47 @@ for idx, road_id in enumerate(road_id_sorted):
                 
                 for n in nbs_index:#current_road.nb:
                     nb_road = roadMap[n]
-                    
-                    if nb_road.color==-1 and nb_road.density!=0: #and process(nb_road.density) == origin_density_level:
-                        # heapq.heappush(q, (-nb_road.density,nb_road.idx, nb_road))
-                        # nb_road.color = color
-                        
-
-                        # if res!=-1 or counter<10:
-                        #     if (COUNTER<10 and counter<10):
-                        #         print(OKGREEN,"current candidate: ", nb_road.idx, " is added becuase < 10 road in cluster", ENDC)
-                        #     elif (COUNTER<10):
-                        #         print(OKGREEN,"current candidate: ", nb_road.idx, "density: {:.2f}".format(nb_road.density), "coeff:", coeff, "is added becuase coeff within the range",ENDC)
-                        #     k, avg, seg= k_temp, avg_temp, seg_temp
-
-                            
-                        #     coeff = math.sqrt(abs(seg))/avg
-                        #     nb_road.color = color
-                        if COUNTER<30:
-                            print(OKBLUE,"candidate: ", nb_road.idx, "density: {:.2f}".format(nb_road.density),"is added to consider queue", ENDC)
+                    if nb_road.color==-1 and nb_road not in visited: #and process(nb_road.density) == origin_density_level:
                         heapq.heappush(q, (-nb_road.density,nb_road.idx, nb_road))
-                        #    counter+=1
+                        visited.add(nb_road)
+                    elif nb_road.color!=-1 and nb_road.color!=color:
+                        current_cluster_nbs.add(nb_road.color)
+            
 
-        color+=1
-        # if color==1:
-        #     break
+        current_sum_density = sum([r.density for r in current_cluster_rds])
+        current_average_density = current_sum_density/len(current_cluster_rds)
 
-d = {}
+        
+        if len(current_cluster_rds)< 10 and len(current_cluster_nbs)>0:
+            #current cluster jas < 10 elemnents. merge.
+            closest_cluster_id = list(current_cluster_nbs)[0]
+            min_density_diff = float('inf')
+            
+            for cluster_id in current_cluster_nbs:
+                nb_density = d[cluster_id][0]
+                if abs(nb_density-current_average_density)<min_density_diff:
+                    min_density_diff = abs(nb_density-current_average_density)
+                    closest_cluster_id = cluster_id
+            
+            
+            d[closest_cluster_id][0] = (d[closest_cluster_id][0] * d[closest_cluster_id][1] + current_sum_density) / (d[closest_cluster_id][1] + len(current_cluster_rds))
+            d[closest_cluster_id][1] += len(current_cluster_rds)
+            for road in current_cluster_rds:
+                road.color = closest_cluster_id
+        else: 
+            d[color] = [current_average_density, len(current_cluster_rds)]
+            color+=1
+sum_ = 0
+for i in d:
+    print(d[i])
+    sum_+=d[i][1]
+print(sum)
+D = {}
 for i in roadMap.values():
-    if i.color not in d:
-        d[i.color]=1
+    if i.color not in D:
+        D[i.color]=1
     else:
-        d[i.color]+=1
+        D[i.color]+=1
 
 
 density = {}
@@ -210,11 +255,12 @@ for v in roadMap.values():
 
 
 for v in density.keys():
-    density[v] = float(density[v])/d[v]
+    density[v] = float(density[v])/D[v]
     
 for i in sorted(density):
-    print(i, density[i], d[i])
+    print(i, density[i], D[i])
 print(len(density))
+
 with open("bfs_cluster.csv", 'w') as out:
     out.write("road_id,cluster_id\n")
     for i in roadMap.keys():

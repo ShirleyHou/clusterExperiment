@@ -155,7 +155,7 @@ def plot_cluster():
     plt.title("Road with density between [0, 1)", size=15)
     sm = plt.cm.ScalarMappable(cmap=jet, norm=plt.Normalize(vmin=min_road_color, vmax=max_road_color))
     sm.set_array([])
-    cbar = plt.colorbar(sm,ticks=[2])
+    cbar = plt.colorbar(sm,ticks=[1])
     plt.show()
 
 
