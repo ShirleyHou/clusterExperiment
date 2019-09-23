@@ -155,13 +155,18 @@ def updatek(k,road_id,x_average_k, segma_k):
     # diff = (new_segma_k - segma_k)/(new_x_k - x_k)
     # print(diff)   
     # print(math.sqrt(abs(new_segma_k)), new_x_avg_k)              
-    if abs(math.sqrt(abs(new_segma_k)) - math.sqrt(abs(segma_k)))> 1:
+    if math.sqrt(abs(new_segma_k))/new_x_avg_k > 1.5:
         return -1, k+1, new_x_avg_k, new_segma_k
     return 1, k+1, new_x_avg_k, new_segma_k
 
 color = 0
 d = {}
-
+# for i in roadMap.values():
+#     d[i] = [0,0]
+# if i.color not in d:
+#     d[i.color]=1
+# else:
+#     d[i.color]+=1
 
 import heapq
 for idx, road_id in enumerate(road_id_sorted):
@@ -190,7 +195,8 @@ for idx, road_id in enumerate(road_id_sorted):
             res, k_temp, avg_temp, seg_temp = updatek(k, current_road.idx, avg, seg)
             
             if res!=-1 or counter<10:
-                    
+                coeff = math.sqrt(abs(seg_temp))/avg_temp
+                current_road.color = color
                 current_cluster_rds.append(current_road)
                 counter+=1
                 k, avg, seg= k_temp, avg_temp, seg_temp
@@ -232,6 +238,8 @@ for idx, road_id in enumerate(road_id_sorted):
         else: 
             d[color] = [current_average_density, len(current_cluster_rds)]
             color+=1
+        print(color)
+            
 sum_ = 0
 for i in d:
     print(d[i])
