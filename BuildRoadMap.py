@@ -92,18 +92,18 @@ def getRoadMap():
 def check_cluster_results(roadMap):
     D = {}
     for i in roadMap.values():
-        if i.color not in D:
-            D[i.color]=1
+        if i.cluster_id not in D:
+            D[i.cluster_id]=1
         else:
-            D[i.color]+=1
+            D[i.cluster_id]+=1
 
     density = {}
 
     for v in roadMap.values():
-        if v.color not in density:
-            density[v.color]=v.density
+        if v.cluster_id not in density:
+            density[v.cluster_id]=v.density
         else:
-            density[v.color]+=v.density
+            density[v.cluster_id]+=v.density
 
     for v in density.keys():
         density[v] = float(density[v])/D[v]

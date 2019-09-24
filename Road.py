@@ -8,14 +8,14 @@ class Road:
         self.nb = set()
         self.length = 0
         self.density = 0.0001
-        self.color = -1
+        self.cluster_id = -1
     def setCluster(self, n):
         assert n>=0
-        self.color = n
+        self.cluster_id = n
     def isClustered(self):
-        return self.color != -1
+        return self.cluster_id != -1
     def isSameCluster(self, roadB):
-        return self.color == roadB.color
+        return self.cluster_id == roadB.cluster_id
     def __str__(self):
         return "{0:.2f}".format(self.density)
 

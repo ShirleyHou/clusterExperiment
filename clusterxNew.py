@@ -1,10 +1,6 @@
 
-import itertools
 import copy
 import csv
-import sys
-import networkx as nx
-import matplotlib.pyplot as plt
 import math
 from Road import Road, Intersection
 from BuildRoadMap import getIntersectionMap, getRoadMap, check_cluster_results
@@ -57,7 +53,7 @@ def merge_current_cluster_with_neighbours(current_cluster_rds, current_cluster_n
     d[closest_cluster_id][0] = (d[closest_cluster_id][0] * d[closest_cluster_id][1] + current_sum_density) / (d[closest_cluster_id][1] + len(current_cluster_rds))
     d[closest_cluster_id][1] += len(current_cluster_rds)
     for road in current_cluster_rds:
-        road.color = closest_cluster_id
+        road.setCluster(closest_cluster_id)
 
 def find_next_qualified_candidate_index(q, k, avg, seg):
     """
@@ -77,12 +73,12 @@ def find_next_qualified_candidate_index(q, k, avg, seg):
 
 import heapq
 
-color = 0 #color starts with 0
+cluster_id = 0 #cluster_id starts with 0
 
 for idx, road_id in enumerate(road_id_sorted):
     road = roadMap[road_id]
     
-    if road.color==-1: # not colored
+    if not road.isClustered():
 
         q = [road]
         
@@ -107,7 +103,7 @@ for idx, road_id in enumerate(road_id_sorted):
             if res!=-1 or len(current_cluster_roads)<10:
                     
                 current_cluster_roads.append(current_road)
-                current_road.color = color
+                current_road.setCluster(cluster_id)
                 k, avg, seg= k_temp, avg_temp, seg_temp
                 
                 neighbour_roads = [roadMap[n] for n in current_road.nb]
@@ -116,9 +112,10 @@ for idx, road_id in enumerate(road_id_sorted):
                     if not nb_road.isClustered() and nb_road not in visited:
                         q.append(nb_road)
                         visited.add(nb_road)
+
                     elif nb_road.isClustered() and not nb_road.isSameCluster(current_road): 
                         #neighbour branch
-                        current_cluster_neighbours.add(nb_road.color)
+                        current_cluster_neighbours.add(nb_road.cluster_id)
             
 
         current_sum_density = sum([r.density for r in current_cluster_roads])
@@ -130,8 +127,8 @@ for idx, road_id in enumerate(road_id_sorted):
             merge_current_cluster_with_neighbours(current_cluster_roads, current_cluster_neighbours)
             
         else: 
-            d[color] = [current_average_density, len(current_cluster_roads)]
-            color+=1
+            d[cluster_id] = [current_average_density, len(current_cluster_roads)]
+            cluster_id +=1
 
 total_road_number_check = 0
 for i in d:
@@ -143,5 +140,5 @@ check_cluster_results(roadMap)
 with open("bfs_cluster.csv", 'w') as out:
     out.write("road_id,cluster_id\n")
     for i in roadMap.keys():
-        out.write(str(i)+","+str(roadMap[i].color)+"\n")
+        out.write(str(i)+","+str(roadMap[i].cluster_id)+"\n")
     
