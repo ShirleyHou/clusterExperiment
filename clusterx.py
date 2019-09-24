@@ -21,7 +21,10 @@ class Road:
         self.nb = set()
         self.length = 0
         self.density = 0.0001
-        self.color = -1
+        self.color = -1 #uncolored
+    def setCluster(n):
+        assert n>=0
+        self.color = n
     def __str__(self):
         return "{0:.2f}".format(self.density)
 
@@ -191,7 +194,8 @@ for idx, road_id in enumerate(road_id_sorted):
         while(q):
             
             current_road = heapq.heappop(q)[2]
-
+            if(color==0):
+                print(current_road.idx)
             res, k_temp, avg_temp, seg_temp = updatek(k, current_road.idx, avg, seg)
             
             if res!=-1 or counter<10:
@@ -238,13 +242,13 @@ for idx, road_id in enumerate(road_id_sorted):
         else: 
             d[color] = [current_average_density, len(current_cluster_rds)]
             color+=1
-        print(color)
+        #print(color)
             
-sum_ = 0
-for i in d:
-    print(d[i])
-    sum_+=d[i][1]
-print(sum)
+# sum_ = 0
+# for i in d:
+#     print(d[i])
+#     sum_+=d[i][1]
+# print(sum)
 D = {}
 for i in roadMap.values():
     if i.color not in D:
@@ -265,9 +269,9 @@ for v in roadMap.values():
 for v in density.keys():
     density[v] = float(density[v])/D[v]
     
-for i in sorted(density):
-    print(i, density[i], D[i])
-print(len(density))
+# for i in sorted(density):
+#     print(i, density[i], D[i])
+# print(len(density))
 
 with open("bfs_cluster.csv", 'w') as out:
     out.write("road_id,cluster_id\n")
