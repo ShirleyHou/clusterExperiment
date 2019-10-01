@@ -22,9 +22,7 @@ class Road:
         self.length = 0
         self.density = 0.0001
         self.color = -1 #uncolored
-    def setCluster(n):
-        assert n>=0
-        self.color = n
+    
     def __str__(self):
         return "{0:.2f}".format(self.density)
 
@@ -48,17 +46,7 @@ with open("intersection_list.csv") as full_road_info:
         lat = float(row['lat'])
         intersection = Intersection(idx,lon, lat)
         itxMap[idx] = intersection
-# with open("intersection_list.csv") as full_road_info:
-#     csv_reader = csv.DictReader(full_road_info)
-#     for row in csv_reader:
-        # outgoing_str = row['outgoing'].split(' ')
-        # incoming_str = row['incoming'].split(' ')
-        # outgoing_intersection_edge = {}
-        # for i in outgoing_str:
-        #     outgoing_list = i.split('-')
-        #     node, edge = int(outgoing_list[0]), int(outgoing_list[1])
-        #     origin[]
-        # incoming_intersection_edge = {}
+
 with open("training_morning_road_pickup_lon_lat.csv") as road_info:
     csv_reader = csv.DictReader(road_info)
     for row in csv_reader:

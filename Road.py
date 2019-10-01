@@ -7,8 +7,11 @@ class Road:
         self.lat = lat
         self.nb = set()
         self.length = 0
-        self.density = 0.0001
+        self.density = 0
         self.cluster_id = -1
+        self.from_node = -1
+        self.to_node = -1
+        
     def setCluster(self, n):
         assert n>=0
         self.cluster_id = n
