@@ -52,7 +52,7 @@ def getRoadMap(**kwargs):
             roadMap[roadId] = new_road
 
     
-    with open("edgeList.txt", mode='r') as edge_info:
+    with open("edgeList.csv", mode='r') as edge_info:
         
         csv_reader = csv.DictReader(edge_info)
         for row in csv_reader:
