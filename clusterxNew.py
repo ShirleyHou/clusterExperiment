@@ -15,15 +15,16 @@ roadMap, eGraph = getRoadMap(PR=True)
 road_id_sorted = [r.idx for r in sorted(roadMap.values(), key = lambda x:-x.density)]
 road_density = [r.density for r in sorted(roadMap.values(), key = lambda x:-x.density)]
 
+LEN = 10
 
-
-def updatek(k,road_id,x_average_k, segma_k):
+def updatek(k,road_id,x_average_k, segma_k,C=0):
 
     new_x_k = roadMap[road_id].density
     new_x_avg_k = ((k-1)*x_average_k+new_x_k)/(k)
     new_segma_k = ((k-1)*(segma_k)+(new_x_k-new_x_avg_k)*(new_x_k-x_average_k))/k
 
-    if math.sqrt(new_segma_k) - math.sqrt(segma_k)> -0.00001: #math.sqrt(new_segma_k)/new_x_avg_k > 1.5: 0.00001
+    threshold = min( -0.005+0.00001*(C**2), 0)#-0.005*(1/2)**(C)
+    if math.sqrt(new_segma_k) - math.sqrt(segma_k)> threshold:#0.00002: #math.sqrt(new_segma_k)/new_x_avg_k > 1.5: 0.00001
         return -1, k+1, new_x_avg_k, new_segma_k
     return 1, k+1, new_x_avg_k, new_segma_k
 
@@ -105,14 +106,14 @@ for idx, road_id in enumerate(road_id_sorted):
 
             current_road = heapq.heappop(q)[2] #q.pop(candidate_index)
 
-            res, k_temp, avg_temp, seg_temp = updatek(k, current_road.idx, avg, seg)
+            res, k_temp, avg_temp, seg_temp = updatek(k, current_road.idx, avg, seg, cluster_id)
 
             """test"""
             # if len(current_cluster_roads) > 9:
             #     #print("test -")
             #     print(math.sqrt(seg_temp) - math.sqrt(seg))
             """test"""
-            if res!=-1 or len(current_cluster_roads) < 10:
+            if res!=-1 or len(current_cluster_roads) < LEN:
                     
                 current_cluster_roads.append(current_road)
                 current_road.setCluster(cluster_id)
@@ -135,7 +136,7 @@ for idx, road_id in enumerate(road_id_sorted):
         current_average_density = current_sum_density/len(current_cluster_roads)
 
         
-        if len(current_cluster_roads)< 10 and len(current_cluster_neighbours)>0:
+        if len(current_cluster_roads)< LEN and len(current_cluster_neighbours)>0:
             #current cluster jas < 10 elemnents. merge.
             merge_current_cluster_with_neighbours(current_cluster_roads, current_cluster_neighbours)
             
